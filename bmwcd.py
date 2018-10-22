@@ -8,6 +8,7 @@ import http.client
 import json
 import time
 import urllib
+import os
 
 from bmwcdcredentials import BMWCDCredentials
 
@@ -18,49 +19,69 @@ from bmwcdcredentials import BMWCDCredentials
 # <host>/api/vehicle/remoteservices/chargingprofile/v1/<VIN>
 
 def main():
-    # Get access token from authentication server
-    conn = http.client.HTTPSConnection("customer.bmwgroup.com")
 
-    payload = urllib.parse.urlencode( {
-        'client_id': 'dbf0a542-ebd1-4ff0-a9a7-55172fbfce35',
-        'redirect_uri': 'https://www.bmw-connecteddrive.com/app/static/external-dispatch.html',
-        'response_type': 'token',
-        'scope': 'authenticate_user fupo',
-        'username': BMWCDCredentials.username,
-        'password': BMWCDCredentials.password,
-    })
+    cachefile = os.environ['HOME'] + '/.bmwcd-access-token.json'
 
-    headers = {
-            'content-type': 'application/x-www-form-urlencoded',
-    }
-    conn.request("POST", "/gcdm/oauth/authenticate", payload, headers)
+    cache = None
 
-    response = conn.getresponse()
-    if response.status != 302:
-        print("unexpected HTTP response code", response.status, response.reason)
-        return
+    try:
+        with open(cachefile) as f:
+            cache = json.load(f)
+    except:
+        pass
 
-    hdr = dict(response.getheaders())
-    if 'Location' not in hdr:
-        print("unexpected: missing 'Location' in Response header")
-        return
+    if cache is None or cache['expiration'] < time.time():
+        # Get access token from authentication server
+        conn = http.client.HTTPSConnection("customer.bmwgroup.com")
 
+        payload = urllib.parse.urlencode( {
+            'client_id': 'dbf0a542-ebd1-4ff0-a9a7-55172fbfce35',
+            'redirect_uri': 'https://www.bmw-connecteddrive.com/app/static/external-dispatch.html',
+            'response_type': 'token',
+            'scope': 'authenticate_user fupo',
+            'username': BMWCDCredentials.username,
+            'password': BMWCDCredentials.password,
+        })
 
-    loc = urllib.parse.urlsplit(hdr['Location'])
-    query = urllib.parse.parse_qs(loc.query)
-    fragment = urllib.parse.parse_qs(loc.fragment)
+        headers = {
+                'content-type': 'application/x-www-form-urlencoded',
+        }
+        conn.request("POST", "/gcdm/oauth/authenticate", payload, headers)
 
-    if 'error' in query:
-        print("error during authentification:", query['error'])
-        return
+        response = conn.getresponse()
+        if response.status != 302:
+            print("unexpected HTTP response code", response.status, response.reason)
+            return
 
-    if 'access_token' not in fragment:
-        print("unexpected: missing 'AccessToken' in Location-field", fragment)
-        return
+        hdr = dict(response.getheaders())
+        if 'Location' not in hdr:
+            print("unexpected: missing 'Location' in Response header")
+            return
 
-    access_token = fragment['access_token'][0]
+        loc = urllib.parse.urlsplit(hdr['Location'])
+        query = urllib.parse.parse_qs(loc.query)
+        fragment = urllib.parse.parse_qs(loc.fragment)
 
-    print("access_token", access_token)
+        if 'error' in query:
+            print("error during authentification:", query['error'])
+            return
+
+        if 'access_token' not in fragment:
+            print("unexpected: missing 'AccessToken' in Location-field", fragment)
+            return
+
+        access_token = fragment['access_token'][0]
+
+        # store cache for later usage
+        cache = {
+            'token': access_token,
+            'expiration' : time.time() + int(fragment['expires_in'][0]),
+        }
+
+        with open(cachefile, 'w') as f:
+            json.dump(cache, f)
+    else:
+        access_token = cache['token']
 
     # Get JSON object with vehicle data from backend server
     conn = http.client.HTTPSConnection("www.bmw-connecteddrive.co.uk")
