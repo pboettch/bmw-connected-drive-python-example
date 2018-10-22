@@ -94,17 +94,16 @@ def main():
     conn.request("GET", "/api/vehicle/dynamic/v1/" + BMWCDCredentials.vin, headers=headers)
 
     response = conn.getresponse()
+    if response.status != 200:
+        print('response status {}: {}'.format(response.status, response.reason))
+        return
+
     json_data = json.loads(response.read().decode('utf-8'))
 
-    print(json_data['attributesMap']['mileage'])
-
-    # Get JSON data (location)
-    conn.request("GET", "/api/vehicle/navigation/v1/" + BMWCDCredentials.vin, headers=headers)
-    response = conn.getresponse()
-    json_data = json.loads(response.read().decode('utf-8'))
-
-    print('latitude {}, longitude {}'.format(json_data['latitude'], json_data['longitude']))
-
+    print('{} {} {} {}'.format(json_data['attributesMap']['mileage'],
+                               json_data['attributesMap']['chargingLevelHv'],
+                               json_data['attributesMap']['gps_lat'],
+                               json_data['attributesMap']['gps_lng']))
 
 if __name__ == '__main__':
     main()
