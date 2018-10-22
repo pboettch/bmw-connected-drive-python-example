@@ -73,14 +73,14 @@ def main():
     conn.request("GET", "/api/vehicle/dynamic/v1/" + BMWCDCredentials.vin, headers=headers)
 
     response = conn.getresponse()
-    json_data = json.loads(response.read())
+    json_data = json.loads(response.read().decode('utf-8'))
 
     print(json_data['attributesMap']['mileage'])
 
     # Get JSON data (location)
     conn.request("GET", "/api/vehicle/navigation/v1/" + BMWCDCredentials.vin, headers=headers)
     response = conn.getresponse()
-    json_data = json.loads(response.read())
+    json_data = json.loads(response.read().decode('utf-8'))
 
     print('latitude {}, longitude {}'.format(json_data['latitude'], json_data['longitude']))
 
