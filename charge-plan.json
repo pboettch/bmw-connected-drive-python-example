@@ -1,0 +1,17 @@
+{
+    "off-peak-hours": [
+        { "begin": "02:05", "end": "07:04" },
+        { "begin": "14:05", "end": "17:04" }
+    ],
+
+    "charging-efficiency": [
+        { "range": [0, 0.1], "efficiency": 0.8 },
+        { "range": [0.11, 0.8], "efficiency": 0.98 },
+        { "range": [0.81, 1], "efficiency": 0.8 }
+    ],
+
+    "capacity": 30,
+    "power": 2.1,
+    "loss": 0.05
+}
+
