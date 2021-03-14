@@ -6,9 +6,10 @@
 import datetime
 import http.client
 import json
+import os
+import sys
 import time
 import urllib
-import os
 
 from bmwcdcredentials import BMWCDCredentials
 
@@ -51,12 +52,12 @@ def main():
         response = conn.getresponse()
         if response.status != 302:
             print("unexpected HTTP response code", response.status, response.reason)
-            return
+            return 1
 
         hdr = dict(response.getheaders())
         if 'Location' not in hdr:
             print("unexpected: missing 'Location' in Response header")
-            return
+            return 1
 
         loc = urllib.parse.urlsplit(hdr['Location'])
         query = urllib.parse.parse_qs(loc.query)
@@ -64,11 +65,11 @@ def main():
 
         if 'error' in query:
             print("error during authentification:", query['error'])
-            return
+            return 1
 
         if 'access_token' not in fragment:
             print("unexpected: missing 'AccessToken' in Location-field", fragment)
-            return
+            return 1
 
         access_token = fragment['access_token'][0]
 
@@ -96,7 +97,7 @@ def main():
     response = conn.getresponse()
     if response.status != 200:
         print('response status {}: {}'.format(response.status, response.reason))
-        return
+        return 1
 
     json_data = json.loads(response.read().decode('utf-8'))
 
@@ -105,5 +106,8 @@ def main():
                                json_data['attributesMap']['gps_lat'],
                                json_data['attributesMap']['gps_lng']))
 
+    return 0
+
 if __name__ == '__main__':
-    main()
+    ret = main()
+    sys.exit(ret)
