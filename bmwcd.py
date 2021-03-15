@@ -85,7 +85,7 @@ def main():
         access_token = cache['token']
 
     # Get JSON object with vehicle data from backend server
-    conn = http.client.HTTPSConnection("www.bmw-connecteddrive.co.uk", timeout=30)
+    conn = http.client.HTTPSConnection("www.bmw-connecteddrive.com", timeout=30)
 
     headers = {
         'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.75 Safari/537.36',
